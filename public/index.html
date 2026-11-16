@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1724">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Rampart">
+  <meta name="description" content="Rene's Rampart – der Festungskrieg für 2 bis 6 Spieler. Burgen bauen, Kanonen feuern, Mauern flicken. Direkt im Browser, am Handy und am PC.">
+  <meta property="og:title" content="Rene's Rampart – Festungskrieg">
+  <meta property="og:description" content="Burgen bauen, Kanonen feuern, Mauern flicken – bis zu 6 Spieler, direkt im Browser.">
+  <meta property="og:image" content="icon-512.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <title>Rene's Rampart – Festungskrieg</title>
+</head>
+<body>
+  <canvas id="game" aria-label="Spielfeld"></canvas>
+  <div id="vignette"></div>
+
+  <!-- ===================== STARTMENÜ ===================== -->
+  <section id="scr-menu" class="screen">
+    <div class="panel menu">
+      <div class="logo">
+        <svg viewBox="0 0 120 90" aria-hidden="true">
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6e7c1"/><stop offset="1" stop-color="#bba57a"/></linearGradient>
+          </defs>
+          <path d="M14 86V40h10v8h10V40h10v8h12V30h8v-8h8v8h8v18h12v-8h10v8h10v-8h10v46z" fill="url(#lg1)" stroke="#5b4a2c" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M52 86V66a8 8 0 0 1 16 0v20z" fill="#3a2c18"/>
+          <path d="M60 22V4" stroke="#5b4a2c" stroke-width="2.5"/>
+          <path d="M61 5c8-3 12 4 22 1v12c-10 3-14-4-22-1z" fill="#e5484d"/>
+          <circle cx="30" cy="62" r="3.2" fill="#3a2c18"/><circle cx="90" cy="62" r="3.2" fill="#3a2c18"/>
+        </svg>
+        <h1>RENE'S <span>RAMPART</span></h1>
+        <p class="sub">Festungskrieg für 2 bis 6 Spieler</p>
+      </div>
+
+      <label class="field"><span>Dein Name</span>
+        <input id="in-name" maxlength="16" autocomplete="nickname" placeholder="z. B. Rene" enterkeyhint="done">
+      </label>
+
+      <div id="online-box">
+        <button id="btn-create" class="btn primary big">🏰 Raum erstellen</button>
+        <div class="join-row">
+          <input id="in-code" maxlength="4" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go">
+          <button id="btn-join" class="btn">Beitreten</button>
+        </div>
+      </div>
+      <p id="srv-status" class="status">Verbinde mit dem Server …</p>
+
+      <button id="btn-offline" class="btn big">🤖 Offline gegen Bots</button>
+      <button id="btn-local2" class="btn desktop-only">👥 Zu zweit an einem PC</button>
+
+      <div class="row">
+        <button id="btn-board" class="btn small">🏆 Rangliste</button>
+        <button id="btn-help" class="btn small">📖 Anleitung</button>
+      </div>
+      <div class="row">
+        <button id="btn-fs" class="btn small">⛶ Vollbild</button>
+        <button id="btn-install" class="btn small">📲 Als App</button>
+        <button id="btn-sound" class="btn small">🔊 Ton an</button>
+      </div>
+      <p class="hint" id="install-hint">Auf dem Handy installieren: <b>Teilen → Zum Home-Bildschirm</b> (iPhone) bzw. <b>⋮ → App installieren</b> (Android).</p>
+    </div>
+  </section>
+
+  <!-- ===================== LOBBY ===================== -->
+  <section id="scr-lobby" class="screen hidden">
+    <div class="panel lobby">
+      <div class="lobby-head">
+        <div>
+          <div class="label" id="lobby-title">Raum-Code</div>
+          <div class="room-code" id="lobby-code">----</div>
+        </div>
+        <div class="lobby-share" id="lobby-share">
+          <button id="btn-wa" class="btn wa">💬 Per WhatsApp einladen</button>
+          <button id="btn-copy" class="btn small">🔗 Link kopieren</button>
+        </div>
+      </div>
+
+      <div class="settings" id="lobby-settings">
+        <div class="label">Spielmodus</div>
+        <div class="seg" id="set-mode">
+          <button data-v="ffa">Jeder gegen Jeden</button>
+          <button data-v="2v2">2 gegen 2</button>
+          <button data-v="3v3">3 gegen 3</button>
+          <button data-v="2v2v2">2 gegen 2 gegen 2</button>
+        </div>
+        <div class="set-row" id="row-ffa">
+          <span class="label">Spieler</span>
+          <div class="seg small" id="set-ffa">
+            <button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button><button data-v="6">6</button>
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="label">Runden</span>
+          <div class="seg small" id="set-rounds">
+            <button data-v="5">5</button><button data-v="8">8</button><button data-v="12">12</button><button data-v="0">∞</button>
+          </div>
+        </div>
+        <div class="toggles">
+          <label class="tg"><input type="checkbox" id="set-crates"><span>📦 Versorgungskisten</span></label>
+          <label class="tg"><input type="checkbox" id="set-pirates"><span>🏴‍☠️ Piraten</span></label>
+          <label class="tg"><input type="checkbox" id="set-citadel"><span>👑 Zitadelle</span></label>
+          <label class="tg"><input type="checkbox" id="set-sabotage"><span>🛠️ Büro-Sabotage</span></label>
+        </div>
+      </div>
+
+      <div class="label">Spieler <small id="slot-hint">– tippe auf einen freien Platz, um dorthin zu wechseln</small></div>
+      <div id="slots" class="slots"></div>
+      <div class="fill-row" id="fill-row">
+        <span class="label">Leere Plätze mit Bots füllen:</span>
+        <button class="btn small" data-fill="easy">Leicht</button>
+        <button class="btn small" data-fill="mid">Mittel</button>
+        <button class="btn small" data-fill="pro">Büro-Profi</button>
+      </div>
+      <p id="lobby-spect" class="status"></p>
+      <div class="row">
+        <button id="btn-leave" class="btn">← Zurück</button>
+        <button id="btn-start" class="btn primary big">⚔️ Spiel starten</button>
+      </div>
+      <p id="lobby-wait" class="status hidden">Warte auf den Gastgeber …</p>
+    </div>
+  </section>
+
+  <!-- ===================== ANLEITUNG ===================== -->
+  <section id="scr-help" class="screen hidden">
+    <div class="panel help">
+      <h2>📖 So wird gespielt</h2>
+      <div class="help-body">
+        <h3>1 · Burg wählen &amp; Kanonen aufstellen</h3>
+        <p>Zu Beginn wählst du eine Burg in deinem Gebiet – sie bekommt automatisch eine Mauer. Danach stellst du Kanonen <b>nur innerhalb deiner umschlossenen Mauern</b> auf. Jede umschlossene Burg bringt neue Kanonen (Heimatburg 2, jede weitere 1).</p>
+        <h3>2 · Gefecht: „Feuer frei!“</h3>
+        <p>Tippe bzw. klicke auf ein Ziel – deine nächste geladene Kanone feuert. Zerschieß gegnerische Mauern, Kanonen und Piratenschiffe. Kanonen außerhalb deiner Mauern schweigen! Jede Kanone hat eine Reichweite – die Super-Kanone schießt doppelt so weit.</p>
+        <h3>3 · Bauen: „Mauern reparieren!“</h3>
+        <p>Setze die Mauerteile so, dass deine Burg wieder <b>komplett umschlossen</b> ist. Nicht bauen kannst du auf Wasser, frischen Kratern, Bränden, Kanonen, Burgen und fremden Mauern. Wer am Ende keine umschlossene Burg hat, scheidet aus.</p>
+        <h3>Steuerung</h3>
+        <ul>
+          <li><b>PC:</b> Maus zielt &amp; setzt · <b>Rechtsklick, R oder Leertaste</b> = drehen · <b>S</b> = Teil überspringen · <b>B</b> = Bastion · Mausrad = Zoom · Rechte Maustaste ziehen = Karte verschieben</li>
+          <li><b>Handy:</b> Finger ziehen und loslassen = Teil setzen (das Teil schwebt über dem Finger) · Antippen = Teil dorthin schieben, nochmal antippen = setzen · Zwei Finger = zoomen &amp; verschieben · 🔍 = zwischen Übersicht und deiner Burg wechseln</li>
+          <li><b>Zu zweit an einem PC:</b> Spieler 2 nutzt <b>Pfeiltasten</b> (bewegen), <b>Enter</b> (setzen/feuern) und <b>#</b> oder <b>Rechts-Shift</b> (drehen)</li>
+        </ul>
+        <h3>Extras (im Raum ein-/ausschaltbar)</h3>
+        <ul>
+          <li>📦 <b>Versorgungskisten</b> fallen per Fallschirm oder treiben im Fluss – abschießen! Streubombe (teilt sich in 3), Brandgeschoss (Mauern brennen nieder, dort kann eine Runde nicht gebaut werden), Reparatur-Trupp (flickt 3 Lücken automatisch).</li>
+          <li>🏴‍☠️ <b>Piraten</b> greifen ab Runde 2 bevorzugt den Führenden an.</li>
+          <li>👑 <b>Zitadelle</b> in der Kartenmitte: Wer sie umschließt, bekommt eine Super-Kanone mit doppelter Reichweite.</li>
+          <li>🛠️ <b>Büro-Sabotage</b>: einmal pro Bauphase <i>Teil überspringen</i> (kostet 2 Sek. deiner Bauzeit) oder <i>Bastion</i> (das nächste Teil hält 2 Treffer aus).</li>
+        </ul>
+        <h3>Teams</h3>
+        <p>Teampartner können ihre Mauern verbinden und gemeinsame Mega-Festungen bauen. Kein Eigenbeschuss! Scheidet ein Partner aus, übernimmt der andere seine Mauern und Kanonen.</p>
+      </div>
+      <button class="btn primary" data-back>Alles klar!</button>
+    </div>
+  </section>
+
+  <!-- ===================== RANGLISTE ===================== -->
+  <section id="scr-board" class="screen hidden">
+    <div class="panel board">
+      <h2>🏆 Rangliste</h2>
+      <div class="seg" id="board-tabs">
+        <button data-v="online" class="on">Online</button>
+        <button data-v="local">Dieses Gerät</button>
+      </div>
+      <div class="table-wrap"><table id="board-table"></table></div>
+      <p class="status" id="board-status"></p>
+      <button class="btn primary" data-back>Zurück</button>
+    </div>
+  </section>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div id="hud-round">Runde 1</div>
+      <div id="hud-phase">
+        <div id="phase-name">–</div>
+        <div id="phase-bar"><i></i></div>
+      </div>
+      <div id="hud-btns">
+        <button id="h-zoom" title="Übersicht / Meine Burg">🔍</button>
+        <button id="h-sound" title="Ton">🔊</button>
+        <button id="h-fs" title="Vollbild">⛶</button>
+        <button id="h-menu" title="Menü">☰</button>
+      </div>
+    </div>
+    <div id="hud-players"></div>
+    <div id="hud-info"></div>
+    <div id="hud-bottom">
+      <button id="b-rot" class="tbtn">⟳<span>Drehen</span></button>
+      <button id="b-place" class="tbtn main">✔<span>Setzen</span></button>
+      <button id="b-special" class="tbtn">⚡<span>Spezial</span></button>
+    </div>
+    <div id="special-menu" class="hidden">
+      <button id="sp-skip">⏭ Teil überspringen <small>(−2 Sek.)</small></button>
+      <button id="sp-bastion">🛡 Bastion <small>(nächstes Teil 2 Treffer)</small></button>
+    </div>
+    <div id="banner"></div>
+  </div>
+  <div id="toast"></div>
+
+  <!-- ===================== PAUSE ===================== -->
+  <section id="scr-pause" class="screen overlay hidden">
+    <div class="panel small-panel">
+      <h2>Menü</h2>
+      <button id="p-resume" class="btn primary big">Weiterspielen</button>
+      <button id="p-voice" class="btn">🗣️ Sprachausgabe an</button>
+      <button id="p-help" class="btn">📖 Anleitung</button>
+      <button id="p-quit" class="btn danger">Spiel verlassen</button>
+    </div>
+  </section>
+
+  <!-- ===================== SPIELENDE ===================== -->
+  <section id="scr-end" class="screen overlay hidden">
+    <div class="panel end">
+      <div id="end-crown">👑</div>
+      <h2 id="end-title">Sieg!</h2>
+      <p id="end-sub" class="status"></p>
+      <div class="table-wrap"><table id="end-table"></table></div>
+      <button id="btn-share" class="btn wa">💬 Ergebnis auf WhatsApp teilen</button>
+      <div class="row">
+        <button id="btn-again" class="btn primary">🔁 Revanche</button>
+        <button id="btn-menu" class="btn">Zum Menü</button>
+      </div>
+      <p id="end-wait" class="status hidden">Der Gastgeber kann eine Revanche starten.</p>
+    </div>
+  </section>
+
+  <!-- ===================== INSTALL-DIALOG ===================== -->
+  <section id="scr-install" class="screen overlay hidden">
+    <div class="panel small-panel">
+      <h2>📲 Als App installieren</h2>
+      <p><b>iPhone / iPad (Safari):</b> Unten auf das Teilen-Symbol <b>⬆︎</b> tippen → <b>„Zum Home-Bildschirm“</b>.</p>
+      <p><b>Android (Chrome):</b> Oben rechts <b>⋮</b> → <b>„App installieren“</b> bzw. <b>„Zum Startbildschirm hinzufügen“</b>.</p>
+      <p>Danach startet Rene's Rampart wie eine echte App im Vollbild – ohne Adressleiste.</p>
+      <button class="btn primary" data-close>Verstanden</button>
+    </div>
+  </section>
+
+  <div id="rotate-hint" class="hidden">📱↻ Tipp: Handy quer halten für mehr Übersicht <button id="rh-close">OK</button></div>
+
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    }
+  </script>
+</body>
+</html>
