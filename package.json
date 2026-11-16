@@ -1,0 +1,18 @@
+{
+  "name": "renes-rampart",
+  "version": "1.0.0",
+  "description": "Rene's Rampart – Festungskrieg für 2 bis 6 Spieler im Browser (Rampart-Remake)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
